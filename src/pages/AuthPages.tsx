@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
@@ -50,7 +49,11 @@ export const Login = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
-        },
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
       });
 
       if (error) throw error;
@@ -146,6 +149,12 @@ export const Signup = () => {
       const { error } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: email.split('@')[0],
+          }
+        }
       });
 
       if (error) throw error;
@@ -173,7 +182,11 @@ export const Signup = () => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/`,
-        },
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        }
       });
 
       if (error) throw error;

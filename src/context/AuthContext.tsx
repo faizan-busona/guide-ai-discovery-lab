@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
               .eq('id', session.user.id)
               .single();
             
-            setProfile(data as Tables<'profiles'>);
+            setProfile(data);
           }, 0);
         } else {
           setProfile(null);
@@ -61,7 +61,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .eq('id', session.user.id)
           .single()
           .then(({ data }) => {
-            setProfile(data as Tables<'profiles'>);
+            setProfile(data);
             setLoading(false);
           });
       } else {

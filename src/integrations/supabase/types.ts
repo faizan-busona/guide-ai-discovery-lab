@@ -9,7 +9,247 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      bookmarks: {
+        Row: {
+          created_at: string
+          id: string
+          tool_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tool_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tool_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookmarks_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      categories: {
+        Row: {
+          created_at: string
+          hidden: boolean | null
+          id: string
+          linked_tags: string[]
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean | null
+          id?: string
+          linked_tags: string[]
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean | null
+          id?: string
+          linked_tags?: string[]
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      comments: {
+        Row: {
+          created_at: string
+          hidden: boolean | null
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          rating: number
+          text: string
+          tool_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          hidden?: boolean | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          rating: number
+          text: string
+          tool_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          hidden?: boolean | null
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          rating?: number
+          text?: string
+          tool_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "comments_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          slug: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          slug: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          slug?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar: string | null
+          blocked: boolean | null
+          created_at: string
+          id: string
+          is_admin: boolean | null
+          name: string
+        }
+        Insert: {
+          avatar?: string | null
+          blocked?: boolean | null
+          created_at?: string
+          id: string
+          is_admin?: boolean | null
+          name: string
+        }
+        Update: {
+          avatar?: string | null
+          blocked?: boolean | null
+          created_at?: string
+          id?: string
+          is_admin?: boolean | null
+          name?: string
+        }
+        Relationships: []
+      }
+      tool_categories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          tool_id: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          tool_id: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          tool_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_categories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tool_categories_tool_id_fkey"
+            columns: ["tool_id"]
+            isOneToOne: false
+            referencedRelation: "tools"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tools: {
+        Row: {
+          created_at: string
+          description: string
+          external_link: string
+          featured: boolean | null
+          hidden: boolean | null
+          id: string
+          logo: string
+          name: string
+          one_liner: string
+          price: string
+          tags: string[]
+          updated_at: string
+          video_link: string | null
+          view_count: number | null
+        }
+        Insert: {
+          created_at?: string
+          description: string
+          external_link: string
+          featured?: boolean | null
+          hidden?: boolean | null
+          id?: string
+          logo: string
+          name: string
+          one_liner: string
+          price: string
+          tags: string[]
+          updated_at?: string
+          video_link?: string | null
+          view_count?: number | null
+        }
+        Update: {
+          created_at?: string
+          description?: string
+          external_link?: string
+          featured?: boolean | null
+          hidden?: boolean | null
+          id?: string
+          logo?: string
+          name?: string
+          one_liner?: string
+          price?: string
+          tags?: string[]
+          updated_at?: string
+          video_link?: string | null
+          view_count?: number | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
