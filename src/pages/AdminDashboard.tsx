@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,7 +15,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { 
-  Tool, 
+  Wrench, 
   PlusCircle, 
   Edit, 
   Eye, 
@@ -86,7 +85,7 @@ const AdminDashboard = () => {
                 <DashboardCard 
                   title="Total Tools" 
                   value={totalTools.toString()} 
-                  icon={<Tool className="h-8 w-8 text-ai-primary" />} 
+                  icon={<Wrench className="h-8 w-8 text-ai-primary" />} 
                 />
                 
                 <DashboardCard 
@@ -337,7 +336,6 @@ const AdminDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-4">
-                      {/* List of categories would go here */}
                       <div className="border rounded-md p-3 flex justify-between items-center">
                         <div>
                           <p className="font-medium">Text</p>

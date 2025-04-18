@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Google } from 'lucide-react';
+import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -75,7 +74,7 @@ export function Login() {
               onClick={handleGoogleLogin}
               disabled={loading}
             >
-              <Google className="mr-2 h-4 w-4" />
+              <LogIn className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
             
@@ -217,7 +216,7 @@ export function Signup() {
               onClick={handleGoogleSignup}
               disabled={loading}
             >
-              <Google className="mr-2 h-4 w-4" />
+              <LogIn className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
             
