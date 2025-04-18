@@ -217,7 +217,7 @@ export const mockComments: Comment[] = [
     userId: '5',
     userName: 'David Wilson',
     rating: 4,
-    text: 'The voice quality is amazingly natural. I use it for my podcast intros and nobody can tell it's AI-generated.',
+    text: "The voice quality is amazingly natural. I use it for my podcast intros and nobody can tell it's AI-generated.",
     hidden: false,
     createdAt: new Date('2023-07-22')
   },
