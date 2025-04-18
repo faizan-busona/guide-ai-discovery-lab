@@ -74,9 +74,39 @@ export type Database = {
           updated_at: string
         }
       }
+      bookmarks: {
+        Row: {
+          id: string
+          user_id: string
+          tool_id: string
+          created_at: string
+        }
+      }
+      comments: {
+        Row: {
+          id: string
+          tool_id: string
+          user_id: string
+          rating: number
+          text: string
+          hidden: boolean
+          hidden_by: string | null
+          hidden_at: string | null
+          created_at: string
+        }
+      }
+      tool_categories: {
+        Row: {
+          id: string
+          tool_id: string
+          category_id: string
+          created_at: string
+        }
+      }
     }
   }
 }
 
 export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row']
-export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T]
+
+// Removing the Enums type as it doesn't exist in our Database type
