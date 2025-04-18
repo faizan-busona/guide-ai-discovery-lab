@@ -1,333 +1,247 @@
+
 import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Navbar } from '@/components/Navbar';
-import { Footer } from '@/components/Footer';
-import { useApp } from '@/context/AppContext';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
-export function Login() {
-  const { currentUser, login, loginWithGoogle } = useApp();
-  const { toast } = useToast();
+export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  if (currentUser) {
-    return <Navigate to="/" replace />;
-  }
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!email || !password) {
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "You have been logged in successfully.",
+      });
+
+      navigate('/');
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Please fill in all fields",
+        description: error.message,
         variant: "destructive",
       });
-      return;
-    }
-    
-    try {
-      setLoading(true);
-      await login(email, password);
-    } catch (error) {
-      console.error(error);
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleGoogleLogin = async () => {
     try {
-      setLoading(true);
-      await loginWithGoogle();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
+      <div className="container max-w-md">
+        <div className="bg-white p-8 rounded-lg border">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Welcome back</h1>
-            <p className="text-gray-600 mt-2">
-              Sign in to your account to continue
-            </p>
+            <p className="text-gray-600">Sign in to your account</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <Button 
-              variant="outline" 
-              className="w-full mb-6"
+
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Signing in...' : 'Sign in'}
+            </Button>
+          </form>
+
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={handleGoogleLogin}
-              disabled={loading}
             >
               <LogIn className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
-            
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="Enter your password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? "Signing in..." : "Sign in"}
-                </Button>
-              </div>
-            </form>
-            
-            <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600">
-                Don't have an account?{" "}
-                <Link to="/signup" className="text-ai-primary hover:underline font-medium">
-                  Sign up
-                </Link>
-              </p>
-            </div>
+          </div>
+
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Don't have an account?{' '}
+            <Link to="/signup" className="text-ai-primary hover:underline">
+              Sign up
+            </Link>
+          </p>
+
+          <div className="mt-4 text-center text-sm text-gray-500">
+            Test Credentials:
+            <br />
+            Admin: admin@aiguide.hub / admin123
+            <br />
+            User: user@aiguide.hub / user123
           </div>
         </div>
-      </main>
-      
-      <Footer />
+      </div>
     </div>
   );
-}
+};
 
-export function Signup() {
-  const { currentUser, signup, loginWithGoogle } = useApp();
-  const { toast } = useToast();
-  const [name, setName] = useState('');
+export const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  if (currentUser) {
-    return <Navigate to="/" replace />;
-  }
-  
-  const handleSubmit = async (e: React.FormEvent) => {
+  const { toast } = useToast();
+  const navigate = useNavigate();
+
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !email || !password) {
-      toast({
-        title: "Error",
-        description: "Please fill in all fields",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (password.length < 6) {
-      toast({
-        title: "Error",
-        description: "Password must be at least 6 characters",
-        variant: "destructive",
-      });
-      return;
-    }
-    
+    setLoading(true);
+
     try {
-      setLoading(true);
-      await signup(name, email, password);
-    } catch (error) {
-      console.error(error);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Please check your email to confirm your account.",
+      });
+
+      navigate('/login');
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
   };
-  
+
   const handleGoogleSignup = async () => {
     try {
-      setLoading(true);
-      await loginWithGoogle();
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setLoading(false);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (error) throw error;
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
     }
   };
-  
+
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <div className="w-full max-w-md">
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
+      <div className="container max-w-md">
+        <div className="bg-white p-8 rounded-lg border">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Create an account</h1>
-            <p className="text-gray-600 mt-2">
-              Join AIGuideHub to bookmark tools and share your feedback
-            </p>
+            <p className="text-gray-600">Sign up to get started</p>
           </div>
-          
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <Button 
-              variant="outline" 
-              className="w-full mb-6"
+
+          <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? 'Creating account...' : 'Create account'}
+            </Button>
+          </form>
+
+          <div className="mt-4">
+            <Button
+              variant="outline"
+              className="w-full"
               onClick={handleGoogleSignup}
-              disabled={loading}
             >
               <LogIn className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
-            
-            <div className="relative mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">
-                  Or continue with email
-                </span>
-              </div>
-            </div>
-            
-            <form onSubmit={handleSubmit}>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input 
-                    id="name" 
-                    type="text" 
-                    placeholder="Enter your name" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input 
-                    id="email" 
-                    type="email" 
-                    placeholder="Enter your email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="Create a password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={loading}
-                  />
-                </div>
-                
-                <Button 
-                  type="submit" 
-                  className="w-full"
-                  disabled={loading}
-                >
-                  {loading ? "Creating account..." : "Create account"}
-                </Button>
-              </div>
-            </form>
-            
-            <div className="mt-6 text-center text-sm">
-              <p className="text-gray-600">
-                Already have an account?{" "}
-                <Link to="/login" className="text-ai-primary hover:underline font-medium">
-                  Sign in
-                </Link>
-              </p>
-            </div>
           </div>
+
+          <p className="mt-4 text-center text-sm text-gray-600">
+            Already have an account?{' '}
+            <Link to="/login" className="text-ai-primary hover:underline">
+              Sign in
+            </Link>
+          </p>
         </div>
-      </main>
-      
-      <Footer />
+      </div>
     </div>
   );
-}
-
-export function AuthPages() {
-  return (
-    <Tabs defaultValue="login" className="min-h-screen flex flex-col">
-      <Navbar />
-      
-      <main className="flex-1 flex items-center justify-center py-12 px-4">
-        <div className="w-full max-w-md">
-          <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold">Welcome to AIGuideHub</h1>
-            <p className="text-gray-600 mt-2">
-              Sign in or create an account to continue
-            </p>
-          </div>
-          
-          <div className="bg-white p-6 rounded-lg border shadow-sm">
-            <TabsList className="grid grid-cols-2 mb-6">
-              <TabsTrigger value="login">Sign In</TabsTrigger>
-              <TabsTrigger value="signup">Sign Up</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="login">
-              <Login />
-            </TabsContent>
-            
-            <TabsContent value="signup">
-              <Signup />
-            </TabsContent>
-          </div>
-        </div>
-      </main>
-      
-      <Footer />
-    </Tabs>
-  );
-}
+};
