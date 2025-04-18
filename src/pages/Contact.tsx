@@ -4,6 +4,9 @@ import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { Tables } from '@/lib/supabase-types';
+
+type PageContent = Pick<Tables<'pages'>, 'content'>;
 
 const Contact = () => {
   const [content, setContent] = useState<string | null>(null);
@@ -18,7 +21,7 @@ const Contact = () => {
         .single();
 
       if (!error && data) {
-        setContent(data.content);
+        setContent((data as PageContent).content);
       }
       setLoading(false);
     };
@@ -39,7 +42,7 @@ const Contact = () => {
           </div>
         ) : (
           <div className="prose prose-gray max-w-none">
-            {content && <p className="whitespace-pre-line">{content}</p>}
+            {content && <div dangerouslySetInnerHTML={{ __html: content }} />}
           </div>
         )}
       </main>
