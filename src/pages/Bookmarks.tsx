@@ -88,6 +88,12 @@ const Bookmarks = () => {
     );
   }
   
+  // Utility: change DB price (string) to allowed Tool type
+  function normalizePrice(price: string): 'Free' | 'Paid' | 'Freemium' {
+    if (price === 'Free' || price === 'Paid' || price === 'Freemium') return price;
+    return 'Freemium';
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -118,7 +124,7 @@ const Bookmarks = () => {
                     logo: tool.logo,
                     oneLiner: tool.one_liner,
                     description: tool.description,
-                    price: tool.price,
+                    price: normalizePrice(tool.price), // FIXED
                     categories: [],
                     tags: tool.tags,
                     externalLink: tool.external_link,
