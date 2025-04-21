@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
@@ -19,7 +20,7 @@ export const Login = () => {
     setLoading(true);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -31,7 +32,18 @@ export const Login = () => {
         description: "You have been logged in successfully.",
       });
 
-      navigate('/');
+      // Redirect to admin dashboard if user is admin, otherwise to home
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', data.user.id)
+        .single();
+        
+      if (profile?.is_admin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: "Error",
@@ -124,9 +136,9 @@ export const Login = () => {
           <div className="mt-4 text-center text-sm text-gray-500">
             Test Credentials:
             <br />
-            Admin: admin@aiguide.hub / admin123
+            Admin: admin@busona.com / admin123
             <br />
-            User: user@aiguide.hub / user123
+            User: user@busona.com / user123
           </div>
         </div>
       </div>
@@ -137,6 +149,7 @@ export const Login = () => {
 export const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -150,9 +163,8 @@ export const Signup = () => {
         email,
         password,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
           data: {
-            name: email.split('@')[0],
+            name,
           }
         }
       });
@@ -161,7 +173,7 @@ export const Signup = () => {
 
       toast({
         title: "Success",
-        description: "Please check your email to confirm your account.",
+        description: "Your account has been created. You can now sign in.",
       });
 
       navigate('/login');
@@ -209,6 +221,17 @@ export const Signup = () => {
           </div>
 
           <form onSubmit={handleSignup} className="space-y-4">
+            <div>
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+              />
+            </div>
+            
             <div>
               <Label htmlFor="email">Email</Label>
               <Input

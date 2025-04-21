@@ -1,16 +1,74 @@
 
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Navbar } from '@/components/Navbar';
 import { Footer } from '@/components/Footer';
 import { ToolCard } from '@/components/ToolCard';
 import { Button } from '@/components/ui/button';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Loader2 } from 'lucide-react';
+import { Tables } from '@/lib/supabase-types';
 
 const Bookmarks = () => {
-  const { currentUser, tools } = useApp();
+  const { user, profile } = useAuth();
+  const [bookmarkedTools, setBookmarkedTools] = useState<Tables<'tools'>[]>([]);
+  const [loading, setLoading] = useState(true);
   
-  if (!currentUser) {
+  useEffect(() => {
+    const fetchBookmarkedTools = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      
+      try {
+        // First get the bookmarks for this user
+        const { data: bookmarks, error: bookmarksError } = await supabase
+          .from('bookmarks')
+          .select('tool_id')
+          .eq('user_id', user.id);
+          
+        if (bookmarksError) {
+          console.error('Error fetching bookmarks:', bookmarksError);
+          setLoading(false);
+          return;
+        }
+        
+        if (!bookmarks || bookmarks.length === 0) {
+          setBookmarkedTools([]);
+          setLoading(false);
+          return;
+        }
+        
+        // Then get the tool details for each bookmark
+        const toolIds = bookmarks.map(bookmark => bookmark.tool_id);
+        
+        const { data: tools, error: toolsError } = await supabase
+          .from('tools')
+          .select('*')
+          .in('id', toolIds)
+          .eq('hidden', false);
+          
+        if (toolsError) {
+          console.error('Error fetching bookmarked tools:', toolsError);
+          setLoading(false);
+          return;
+        }
+        
+        setBookmarkedTools(tools || []);
+      } catch (error) {
+        console.error('Error in bookmarks fetch:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchBookmarkedTools();
+  }, [user]);
+  
+  if (!user) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
@@ -30,10 +88,6 @@ const Bookmarks = () => {
     );
   }
   
-  const bookmarkedTools = tools.filter(tool => 
-    currentUser.bookmarks.includes(tool.id) && !tool.hidden
-  );
-  
   return (
     <div className="min-h-screen flex flex-col">
       <Navbar />
@@ -49,10 +103,34 @@ const Bookmarks = () => {
           
           <h1 className="text-2xl font-bold mb-6">Your Bookmarked Tools</h1>
           
-          {bookmarkedTools.length > 0 ? (
+          {loading ? (
+            <div className="flex justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-ai-primary" />
+            </div>
+          ) : bookmarkedTools.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {bookmarkedTools.map((tool) => (
-                <ToolCard key={tool.id} tool={tool} />
+                <ToolCard 
+                  key={tool.id} 
+                  tool={{
+                    id: tool.id,
+                    name: tool.name,
+                    logo: tool.logo,
+                    oneLiner: tool.one_liner,
+                    description: tool.description,
+                    price: tool.price,
+                    categories: [],
+                    tags: tool.tags,
+                    externalLink: tool.external_link,
+                    videoLink: tool.video_link || '',
+                    viewCount: tool.view_count || 0,
+                    rating: 0,
+                    ratingCount: 0,
+                    featured: tool.featured || false,
+                    hidden: tool.hidden || false,
+                    createdAt: new Date(tool.created_at)
+                  }} 
+                />
               ))}
             </div>
           ) : (
