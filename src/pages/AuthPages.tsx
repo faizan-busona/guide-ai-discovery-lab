@@ -1,81 +1,67 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogIn } from 'lucide-react';
+import { LogIn, Mail, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useAuth } from '@/context/AuthContext';
+import { toast } from '@/components/ui/sonner';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin, user } = useAuth();
+  const { signInWithEmail, signInWithGoogle, user } = useAuth();
   
-  // If user is already logged in, redirect them
+  // Get return URL from location state or default to dashboard
+  const returnUrl = location.state?.returnUrl || '/dashboard';
+
   useEffect(() => {
+    // If user is already logged in, redirect them
     if (user) {
-      if (isAdmin) {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      navigate(returnUrl);
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, navigate, returnUrl]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const { error } = await signInWithEmail(email, password);
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "You have been logged in successfully.",
-      });
-
-      // Redirect will happen in the useEffect when auth state updates
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error) {
+        setError(error.message);
+        toast.error('Login failed', {
+          description: error.message
+        });
+      } else {
+        toast.success('Login successful', {
+          description: 'Welcome back!'
+        });
+        // Redirect will happen automatically in useEffect when auth state updates
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unknown error occurred');
+      toast.error('Login failed');
+    } finally {
       setLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      await signInWithGoogle();
+      // Redirect will happen through Supabase OAuth flow
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign in with Google');
+      toast.error('Google login failed');
     }
   };
 
@@ -93,16 +79,27 @@ export const Login = () => {
             <p className="text-gray-600">Sign in to your account</p>
           </div>
 
+          {error && (
+            <Alert className="mb-4 bg-red-50 text-red-800 border-red-200">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
 
             <div>
@@ -113,6 +110,7 @@ export const Login = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder="••••••••"
               />
             </div>
 
@@ -121,7 +119,18 @@ export const Login = () => {
             </Button>
           </form>
 
-          <div className="mt-4">
+          <div className="mt-6 relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6">
             <Button
               variant="outline"
               className="w-full"
@@ -132,9 +141,9 @@ export const Login = () => {
             </Button>
           </div>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             Don't have an account?{' '}
-            <Link to="/signup" className="text-ai-primary hover:underline">
+            <Link to="/signup" className="text-primary hover:underline">
               Sign up
             </Link>
           </p>
@@ -152,44 +161,37 @@ export const Login = () => {
   );
 };
 
-// Keep the Signup component as is
 export const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
-  const { toast } = useToast();
+  const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { signUpWithEmail, signInWithGoogle } = useAuth();
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          data: {
-            name,
-          }
-        }
-      });
+      const { error } = await signUpWithEmail(email, password, name);
 
-      if (error) throw error;
-
-      toast({
-        title: "Success",
-        description: "Your account has been created. You can now sign in.",
-      });
-
-      navigate('/login');
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      if (error) {
+        setError(error.message);
+        toast.error('Signup failed', {
+          description: error.message
+        });
+      } else {
+        toast.success('Account created successfully', {
+          description: 'You can now sign in with your new account.'
+        });
+        navigate('/login');
+      }
+    } catch (err: any) {
+      setError(err.message || 'An unknown error occurred');
+      toast.error('Signup failed');
     } finally {
       setLoading(false);
     }
@@ -197,24 +199,11 @@ export const Signup = () => {
 
   const handleGoogleSignup = async () => {
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          }
-        }
-      });
-
-      if (error) throw error;
-    } catch (error: any) {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
+      await signInWithGoogle();
+      // Redirect will happen through Supabase OAuth flow
+    } catch (err: any) {
+      setError(err.message || 'Failed to sign up with Google');
+      toast.error('Google signup failed');
     }
   };
 
@@ -227,27 +216,43 @@ export const Signup = () => {
             <p className="text-gray-600">Sign up to get started</p>
           </div>
 
+          {error && (
+            <Alert className="mb-4 bg-red-50 text-red-800 border-red-200">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSignup} className="space-y-4">
             <div>
               <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <User className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="name"
+                  type="text"
+                  className="pl-10"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  placeholder="John Doe"
+                />
+              </div>
             </div>
             
             <div>
               <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+              <div className="relative">
+                <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                <Input
+                  id="email"
+                  type="email"
+                  className="pl-10"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  placeholder="you@example.com"
+                />
+              </div>
             </div>
 
             <div>
@@ -258,6 +263,7 @@ export const Signup = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                placeholder="••••••••"
               />
             </div>
 
@@ -266,7 +272,18 @@ export const Signup = () => {
             </Button>
           </form>
 
-          <div className="mt-4">
+          <div className="mt-6 relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-white text-gray-500">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <div className="mt-6">
             <Button
               variant="outline"
               className="w-full"
@@ -277,9 +294,9 @@ export const Signup = () => {
             </Button>
           </div>
 
-          <p className="mt-4 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-ai-primary hover:underline">
+            <Link to="/login" className="text-primary hover:underline">
               Sign in
             </Link>
           </p>

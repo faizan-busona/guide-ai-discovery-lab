@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AppProvider } from "@/context/AppContext";
 import { AuthProvider } from "@/context/AuthContext";
+import RouteGuard from "@/components/RouteGuard";
 
 import Index from "./pages/Index";
 import ToolDetail from "./pages/ToolDetail";
@@ -22,6 +23,7 @@ import FAQ from "./pages/FAQ";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
+import Dashboard from "./pages/Dashboard";
 
 const queryClient = new QueryClient();
 
@@ -34,21 +36,43 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Public routes */}
               <Route path="/" element={<Index />} />
               <Route path="/tool/:id" element={<ToolDetail />} />
               <Route path="/search" element={<SearchResults />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/bookmarks" element={<Bookmarks />} />
-              <Route path="/categories" element={<Categories />} />
-              <Route path="/trending" element={<Trending />} />
-              <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/privacy" element={<PrivacyPolicy />} />
               <Route path="/terms" element={<TermsOfService />} />
               <Route path="/cookies" element={<CookiePolicy />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/trending" element={<Trending />} />
+              
+              {/* Auth routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+              
+              {/* Protected routes */}
+              <Route path="/dashboard" element={
+                <RouteGuard requireAuth>
+                  <Dashboard />
+                </RouteGuard>
+              } />
+              <Route path="/bookmarks" element={
+                <RouteGuard requireAuth>
+                  <Bookmarks />
+                </RouteGuard>
+              } />
+              
+              {/* Admin routes */}
+              <Route path="/admin" element={
+                <RouteGuard requireAuth requireAdmin>
+                  <AdminDashboard />
+                </RouteGuard>
+              } />
+              
+              {/* 404 route */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

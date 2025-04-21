@@ -10,6 +10,10 @@ type AuthContextType = {
   profile: Tables<'profiles'> | null;
   isAdmin: boolean;
   loading: boolean;
+  signInWithEmail: (email: string, password: string) => Promise<{ error: any | null }>;
+  signUpWithEmail: (email: string, password: string, name: string) => Promise<{ error: any | null }>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +22,10 @@ const AuthContext = createContext<AuthContextType>({
   profile: null,
   isAdmin: false,
   loading: true,
+  signInWithEmail: async () => ({ error: null }),
+  signUpWithEmail: async () => ({ error: null }),
+  signInWithGoogle: async () => {},
+  signOut: async () => {},
 });
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
@@ -25,6 +33,53 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Tables<'profiles'> | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Authentication methods
+  const signInWithEmail = async (email: string, password: string) => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      return { error };
+    } catch (error) {
+      console.error("Error signing in:", error);
+      return { error };
+    }
+  };
+
+  const signUpWithEmail = async (email: string, password: string, name: string) => {
+    try {
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { name }
+        }
+      });
+      return { error };
+    } catch (error) {
+      console.error("Error signing up:", error);
+      return { error };
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
 
   useEffect(() => {
     // Set up auth state listener FIRST
@@ -105,7 +160,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       session, 
       profile, 
       isAdmin: profile?.is_admin ?? false,
-      loading 
+      loading,
+      signInWithEmail,
+      signUpWithEmail,
+      signInWithGoogle,
+      signOut
     }}>
       {children}
     </AuthContext.Provider>
