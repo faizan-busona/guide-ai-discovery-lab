@@ -34,14 +34,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         setUser(session?.user ?? null);
         
         if (session?.user) {
+          // Use setTimeout to avoid potential Supabase deadlock issues
           setTimeout(async () => {
-            const { data } = await supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', session.user.id)
-              .single();
-            
-            setProfile(data);
+            try {
+              const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', session.user.id)
+                .single();
+              
+              if (error) {
+                console.error("Error fetching profile:", error);
+                return;
+              }
+              
+              setProfile(data);
+            } catch (err) {
+              console.error("Error in profile fetch:", err);
+            }
           }, 0);
         } else {
           setProfile(null);
@@ -60,8 +70,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
           .select('*')
           .eq('id', session.user.id)
           .single()
-          .then(({ data }) => {
+          .then(({ data, error }) => {
+            if (error) {
+              console.error("Error fetching profile on init:", error);
+              setLoading(false);
+              return;
+            }
+            
             setProfile(data);
+            setLoading(false);
+          })
+          .catch(err => {
+            console.error("Error in initial profile fetch:", err);
             setLoading(false);
           });
       } else {

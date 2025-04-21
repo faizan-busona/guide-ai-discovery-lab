@@ -12,6 +12,8 @@ import ToolDetail from "./pages/ToolDetail";
 import SearchResults from "./pages/SearchResults";
 import { Login, Signup } from "./pages/AuthPages";
 import Bookmarks from "./pages/Bookmarks";
+import Categories from "./pages/Categories";
+import Trending from "./pages/Trending";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
 import About from "./pages/About";
@@ -38,6 +40,8 @@ const App = () => (
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/bookmarks" element={<Bookmarks />} />
+              <Route path="/categories" element={<Categories />} />
+              <Route path="/trending" element={<Trending />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />

@@ -1,15 +1,30 @@
-import { useLocation } from "react-router-dom";
+
 import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const NotFound = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
+    // For /tools/{id} URLs, redirect to /tool/{id}
+    if (location.pathname.startsWith('/tools/')) {
+      const toolId = location.pathname.replace('/tools/', '');
+      navigate(`/tool/${toolId}`, { replace: true });
+      return;
+    }
+    
+    // For /tools URL, redirect to home page
+    if (location.pathname === '/tools') {
+      navigate('/', { replace: true });
+      return;
+    }
+
     console.error(
       "404 Error: User attempted to access non-existent route:",
       location.pathname
     );
-  }, [location.pathname]);
+  }, [location.pathname, navigate]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">

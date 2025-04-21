@@ -1,12 +1,12 @@
-
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -14,13 +14,26 @@ export const Login = () => {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
+  const { isAdmin, user } = useAuth();
+  
+  // If user is already logged in, redirect them
+  useEffect(() => {
+    if (user) {
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    }
+  }, [user, isAdmin, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -32,25 +45,13 @@ export const Login = () => {
         description: "You have been logged in successfully.",
       });
 
-      // Redirect to admin dashboard if user is admin, otherwise to home
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('is_admin')
-        .eq('id', data.user.id)
-        .single();
-        
-      if (profile?.is_admin) {
-        navigate('/admin');
-      } else {
-        navigate('/');
-      }
+      // Redirect will happen in the useEffect when auth state updates
     } catch (error: any) {
       toast({
         title: "Error",
         description: error.message,
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
@@ -77,6 +78,11 @@ export const Login = () => {
       });
     }
   };
+
+  // If already logged in, don't show the login form
+  if (user) {
+    return null;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
@@ -146,6 +152,7 @@ export const Login = () => {
   );
 };
 
+// Keep the Signup component as is
 export const Signup = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
