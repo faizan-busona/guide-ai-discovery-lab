@@ -1,21 +1,33 @@
 
 import { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Bookmark, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useApp } from '@/context/AppContext';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/components/ui/sonner';
 import { Tool } from '@/types/types';
 
 interface ToolCardProps {
   tool: Tool;
   featured?: boolean;
+  isBookmarked?: boolean;
+  onBookmarkChange?: (toolId: string, isBookmarked: boolean) => void;
 }
 
-export function ToolCard({ tool, featured = false }: ToolCardProps) {
-  const { toggleBookmark, isBookmarked, currentUser } = useApp();
+export function ToolCard({ 
+  tool, 
+  featured = false, 
+  isBookmarked = false,
+  onBookmarkChange
+}: ToolCardProps) {
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [bookmarked, setBookmarked] = useState(isBookmarked);
   const [isHovering, setIsHovering] = useState(false);
+  const [isBookmarking, setIsBookmarking] = useState(false);
   
   const getPriceBadgeClass = (price: string) => {
     switch (price) {
@@ -30,10 +42,62 @@ export function ToolCard({ tool, featured = false }: ToolCardProps) {
     }
   };
   
-  const handleBookmarkClick = (e: React.MouseEvent) => {
+  const handleBookmarkClick = async (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    toggleBookmark(tool.id);
+    
+    if (!user) {
+      navigate('/login', { state: { returnUrl: `/tool/${tool.id}` } });
+      return;
+    }
+    
+    if (isBookmarking) return;
+    
+    setIsBookmarking(true);
+    
+    try {
+      if (!bookmarked) {
+        // Add bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .insert({
+            user_id: user.id,
+            tool_id: tool.id
+          });
+          
+        if (error) {
+          console.error('Error adding bookmark:', error);
+          toast.error('Failed to bookmark tool');
+          return;
+        }
+        
+        setBookmarked(true);
+        if (onBookmarkChange) onBookmarkChange(tool.id, true);
+        toast.success('Tool bookmarked successfully');
+      } else {
+        // Remove bookmark
+        const { error } = await supabase
+          .from('bookmarks')
+          .delete()
+          .eq('user_id', user.id)
+          .eq('tool_id', tool.id);
+          
+        if (error) {
+          console.error('Error removing bookmark:', error);
+          toast.error('Failed to remove bookmark');
+          return;
+        }
+        
+        setBookmarked(false);
+        if (onBookmarkChange) onBookmarkChange(tool.id, false);
+        toast.success('Bookmark removed');
+      }
+    } catch (error) {
+      console.error('Error toggling bookmark:', error);
+      toast.error('Something went wrong');
+    } finally {
+      setIsBookmarking(false);
+    }
   };
   
   return (
@@ -66,10 +130,11 @@ export function ToolCard({ tool, featured = false }: ToolCardProps) {
                 <Button 
                   variant="ghost" 
                   size="icon" 
-                  className={`h-8 w-8 ${isBookmarked(tool.id) ? 'text-ai-primary' : 'text-gray-400'}`}
+                  className={`h-8 w-8 ${bookmarked ? 'text-ai-primary' : 'text-gray-400'}`}
                   onClick={handleBookmarkClick}
+                  disabled={isBookmarking}
                 >
-                  <Bookmark className={`h-5 w-5 ${isBookmarked(tool.id) ? 'fill-current' : ''}`} />
+                  <Bookmark className={`h-5 w-5 ${bookmarked ? 'fill-current' : ''}`} />
                 </Button>
               </div>
               

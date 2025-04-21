@@ -1,7 +1,7 @@
 
 import { useState, useEffect } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
-import { LogIn, Mail, User } from 'lucide-react';
+import { LogIn, Mail, User, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -24,8 +24,10 @@ export const Login = () => {
   useEffect(() => {
     // If user is already logged in, redirect them
     if (user) {
-      navigate(returnUrl);
+      navigate(returnUrl, { replace: true });
     }
+    
+    document.title = 'Login | AIGuideHub';
   }, [user, navigate, returnUrl]);
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -74,6 +76,13 @@ export const Login = () => {
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
       <div className="container max-w-md">
         <div className="bg-white p-8 rounded-lg border">
+          <div className="flex justify-between items-center mb-4">
+            <Link to="/" className="text-ai-primary hover:underline flex items-center text-sm">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to home
+            </Link>
+          </div>
+          
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Welcome back</h1>
             <p className="text-gray-600">Sign in to your account</p>
@@ -168,7 +177,16 @@ export const Signup = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
-  const { signUpWithEmail, signInWithGoogle } = useAuth();
+  const { signUpWithEmail, signInWithGoogle, user } = useAuth();
+
+  useEffect(() => {
+    // If user is already logged in, redirect them
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+    
+    document.title = 'Sign Up | AIGuideHub';
+  }, [user, navigate]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -207,10 +225,22 @@ export const Signup = () => {
     }
   };
 
+  // If already logged in, don't show the signup form
+  if (user) {
+    return null;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col justify-center">
       <div className="container max-w-md">
         <div className="bg-white p-8 rounded-lg border">
+          <div className="flex justify-between items-center mb-4">
+            <Link to="/" className="text-ai-primary hover:underline flex items-center text-sm">
+              <ArrowLeft className="mr-1 h-4 w-4" />
+              Back to home
+            </Link>
+          </div>
+          
           <div className="text-center mb-8">
             <h1 className="text-2xl font-bold">Create an account</h1>
             <p className="text-gray-600">Sign up to get started</p>

@@ -43,9 +43,11 @@ const RouteGuard = ({
 
     // Redirect logged-in users away from auth pages
     if (user && (location.pathname === '/login' || location.pathname === '/signup')) {
-      navigate('/');
+      // Redirect to dashboard or the return URL if available
+      const returnUrl = location.state?.returnUrl || '/dashboard';
+      navigate(returnUrl, { replace: true });
     }
-  }, [user, isAdmin, loading, requireAuth, requireAdmin, navigate, redirectTo, location.pathname]);
+  }, [user, isAdmin, loading, requireAuth, requireAdmin, navigate, redirectTo, location]);
 
   // Show loading state
   if (loading) {

@@ -25,7 +25,14 @@ import TermsOfService from "./pages/TermsOfService";
 import CookiePolicy from "./pages/CookiePolicy";
 import Dashboard from "./pages/Dashboard";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -49,11 +56,19 @@ const App = () => (
               <Route path="/categories" element={<Categories />} />
               <Route path="/trending" element={<Trending />} />
               
-              {/* Auth routes */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
+              {/* Auth routes - redirect logged in users */}
+              <Route path="/login" element={
+                <RouteGuard>
+                  <Login />
+                </RouteGuard>
+              } />
+              <Route path="/signup" element={
+                <RouteGuard>
+                  <Signup />
+                </RouteGuard>
+              } />
               
-              {/* Protected routes */}
+              {/* Protected routes - require authentication */}
               <Route path="/dashboard" element={
                 <RouteGuard requireAuth>
                   <Dashboard />
@@ -65,7 +80,7 @@ const App = () => (
                 </RouteGuard>
               } />
               
-              {/* Admin routes */}
+              {/* Admin routes - require authentication and admin role */}
               <Route path="/admin" element={
                 <RouteGuard requireAuth requireAdmin>
                   <AdminDashboard />
