@@ -60,17 +60,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .single()
-          .then(({ data, error }) => {
+    const fetchSession = async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        if (session?.user) {
+          try {
+            const { data, error } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', session.user.id)
+              .single();
+              
             if (error) {
               console.error("Error fetching profile on init:", error);
               setLoading(false);
@@ -78,16 +81,18 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             }
             
             setProfile(data);
-            setLoading(false);
-          })
-          .catch(err => {
+          } catch (err) {
             console.error("Error in initial profile fetch:", err);
-            setLoading(false);
-          });
-      } else {
+          }
+        }
+      } catch (err) {
+        console.error("Error in session fetch:", err);
+      } finally {
         setLoading(false);
       }
-    });
+    };
+
+    fetchSession();
 
     return () => {
       subscription.unsubscribe();
